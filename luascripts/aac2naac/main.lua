@@ -6,39 +6,53 @@ local function get_aac_total_samples(path)
     local total_samples = 0
 
     while true do
-        local sync = f:read(2)
-        if not sync then break end
+        local header = f:read(7)
+        if not header or #header < 7 then break end
 
-        local b1, b2 = sync:byte(1), sync:byte(2)
+        local b1, b2, b3, b4, b5, b6, b7 = header:byte(1, 7)
 
-        -- ADTS syncword 0xFFF
+        -- syncword 0xFFF
         if b1 == 0xFF and (b2 & 0xF0) == 0xF0 then
-            local hdr = f:read(3)
-            if not hdr then break end
+            -- protection_absent (1bit, b2 の LSB)
+            local protection_absent = b2 & 0x01
 
-            local b3, b4, b5 = hdr:byte(1), hdr:byte(2), hdr:byte(3)
-
-            -- フレーム長（13bit）
+            -- フレーム長（13bit）: b4, b5, b6 を使用
             local frame_length =
-                ((b2 & 0x03) << 11) |
-                (b3 << 3) |
-                ((b4 & 0xE0) >> 5)
+                ((b4 & 0x03) << 11) |
+                (b5 << 3) |
+                ((b6 & 0xE0) >> 5)
 
-            local payload = frame_length - 5
+            -- ヘッダーサイズ
+            local header_size = protection_absent ~= 0 and 7 or 9
 
+            -- 残りペイロード長
+            local payload = frame_length - header_size
+            if payload < 0 then
+                -- 壊れたフレームとみなして終了
+                break
+            end
+
+            -- フレームカウント
             total_frames = total_frames + 1
             total_samples = total_samples + 1024
 
+            -- CRC 付きの場合は、すでに 7 バイトしか読んでないので
+            -- 残り (header_size - 7) バイト分をスキップ
+            if header_size > 7 then
+                f:seek("cur", header_size - 7)
+            end
+
+            -- ペイロードをスキップ
             f:seek("cur", payload)
         else
-            f:seek("cur", -1)
+            -- syncword でない → 1バイト戻して再検索
+            f:seek("cur", -6)  -- 7バイト読んだので 6 バイト戻る
         end
     end
 
     f:close()
     return total_frames, total_samples
 end
-
 
 -- リトルエンディアンで 32bit 整数を書き込む
 local function write_u32_le(f, value)
@@ -89,7 +103,7 @@ local function convert_to_naac(aac_path, naac_path)
     f_out:write("\0\0\0")
 
     -- 13-14: サンプリングレート 32000 (0x007D) リトルエンディアン
-    f_out:write(string.char(0x00, 0x7D))
+    f_out:write(string.char(0x7D, 0x00))
 
     -- 15-16: 予約領域
     f_out:write("\0\0")
