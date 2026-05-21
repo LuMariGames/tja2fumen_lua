@@ -450,16 +450,12 @@ function cluster_notes(list, diffset)
             end
             table.insert(out, item)
         else
-            if #cluster == 0 then
-                cluster[#cluster+1] = item
-            else
-                if in_set(item.diff) then
-                    cluster[#cluster+1] = item
-                else
-                    cluster[#cluster+1] = item
-                    table.insert(out, cluster)
-                    cluster = {}
-                end
+            -- 常に現在の音符をクラスターに追加
+            cluster[#cluster+1] = item
+            -- 現在の音符のdiff（次の音符との間隔）が密集地帯の条件を満たさないなら、ここで区切る
+            if not in_set(item.diff) then
+                table.insert(out, cluster)
+                cluster = {}
             end
         end
     end
