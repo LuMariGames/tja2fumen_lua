@@ -103,7 +103,7 @@ local function convert_to_naac(aac_path, naac_path)
     f_out:write("\0\0\0")
 
     -- 13-14: サンプリングレート 32000 (0x007D) リトルエンディアン
-    f_out:write(string.char(0x7D, 0x00))
+    f_out:write(string.char(0x00, 0x7D))
 
     -- 15-16: 予約領域
     f_out:write("\0\0")
