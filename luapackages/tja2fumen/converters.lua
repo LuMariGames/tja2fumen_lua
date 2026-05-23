@@ -163,6 +163,7 @@ local function convert_tja_to_fumen(tja)
         header     = FumenHeader.new(),
         score_init = tja.score_init,
         score_diff = tja.score_diff,
+        course     = tja.course,
     }
 
     for i=1,n_measures do
