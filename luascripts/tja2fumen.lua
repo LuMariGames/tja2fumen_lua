@@ -52,9 +52,15 @@ for course_name, course in pairs(tja.courses) do
 
     -- 出力ファイル名
     local base = target:gsub("%.tja$", "")
+    local name = base:gsub("0:/tja/", "")
     local cid = const.COURSE_IDS[course_name] or "m"
+    local outpath
 
-    local outpath = base .. "_" .. cid .. ".bin"
+    if course_name == "Ura" then
+        outpath = "0:/tja/ex_" .. name .. "_m.bin"
+    else
+        outpath = base .. "_" .. cid .. ".bin"
+    end
 
     print("Writeing: " .. outpath)
     writers.write_fumen(outpath, fumen)

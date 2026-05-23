@@ -65,7 +65,7 @@ end
 
 
 -- AAC → NAAC 変換
-local function convert_to_naac(aac_path, naac_path)
+local function convert_to_naac(aac_path)
 
     print("AAC Loading: " .. aac_path)
     print("Please wait a moment...")
@@ -77,8 +77,16 @@ local function convert_to_naac(aac_path, naac_path)
     local aac_size = f_in:seek("end")
     f_in:seek("set", 0)
 
-    print("AAC to NAAC Converting...")
     -- 3. 出力ファイル作成
+    print("AAC to NAAC Converting...")
+    local base = aac_path:gsub("%.aac$", "")
+    local naac_path
+    if total_samples < 960000 then
+        naac_path = base .. "_3ds_s.naac"
+    else
+        naac_path = base .. "_3ds.naac"
+    end
+
     local f_out = io.open(naac_path, "wb")
     if not f_out then
         fs.make_dummy_file(naac_path, 0)
@@ -140,4 +148,4 @@ end
 -- 使用例
 print("AAC2NAAC")
 local target = fs.ask_select_file("Select a .aac File.\n.aacファイルを選択して下さい。", "0:/tja/*.aac")
-convert_to_naac(target, "0:/tja/output_3ds.naac")
+convert_to_naac(target)
