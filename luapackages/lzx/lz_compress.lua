@@ -68,45 +68,88 @@ local function chunkit(iter, n)
 end
 
 local function compress_nlz10(input, out)
-    out:write(u32le((#input << 8) + 0x10))
+    -- 出力用のバッファ（テーブルに溜めて最後に table.concat で一括書き出し）
+    local out_buffer = {}
+    local buf_idx = 1
 
-    local iter = _compress(input, NLZ10Window)
-    local chunk = chunkit(iter, 8)
+    -- ヘッダー書き込み（u32leのインライン化）
+    local header_val = (#input << 8) + 0x10
+    out_buffer[buf_idx] = string.char(
+        header_val & 0xFF,
+        (header_val >> 8) & 0xFF,
+        (header_val >> 16) & 0xFF,
+        (header_val >> 24) & 0xFF
+    )
+    buf_idx = buf_idx + 1
 
+    local window = NLZ10Window:new(input)
+    local i = 0
+    local n_input = #input
     local length = 0
 
-    while true do
-        local tokens = chunk()
-        if not tokens then break end
+    -- 8トークン分の文字データを一時保持する配列（テーブルの再生成を防ぐため固定で使い回す）
+    local tokens_area = {}
 
-        local flags = {}
-        for i, t in ipairs(tokens) do
-            flags[i] = type(t) == "table"
-        end
+    while i < n_input do
+        local flag_byte = 0
+        local token_count = 0
 
-        out:write(u8(packflags(flags)))
-        length = length + 1
+        -- 8ビット（8トークン）分の処理を1グループとしてまとめる
+        for k = 1, 8 do
+            flag_byte = flag_byte << 1
+            
+            if i < n_input then
+                local match = window:search()
+                token_count = token_count + 1
+                
+                if match then
+                    -- マッチした場合はフラグの下位ビットを1にする
+                    flag_byte = flag_byte | 1
+                    
+                    local count, disp = match[1], match[2]
+                    window:advance(count)
+                    i = i + count
 
-        for _, t in ipairs(tokens) do
-            if type(t) == "table" then
-                local count, disp = t[1], t[2]
-                count = count - 3
-                disp = (-disp) - 1
-
-                local sh = (count << 12) | disp
-                out:write(u16be(sh))
-                length = length + 2
-            else
-                out:write(u8(t))
-                length = length + 1
+                    -- マッチデータのシリアライズ（u16beのインライン化）
+                    local c = count - 3
+                    local d = (-disp) - 1
+                    local sh = (c << 12) | d
+                    
+                    tokens_area[token_count] = string.char((sh >> 8) & 0xFF, sh & 0xFF)
+                else
+                    -- マッチしなかった場合（リテラル）
+                    local b = input[i]
+                    window:next()
+                    i = i + 1
+                    
+                    -- リテラルデータのシリアライズ（u8のインライン化）
+                    tokens_area[token_count] = string.char(b & 0xFF)
+                end
             end
         end
+
+        -- 確定したフラグバイトをバッファに追加
+        out_buffer[buf_idx] = string.char(flag_byte & 0xFF)
+        buf_idx = buf_idx + 1
+        length = length + 1
+
+        -- 溜まったトークンデータを一気に出力バッファへ移す
+        for j = 1, token_count do
+            local t_str = tokens_area[j]
+            out_buffer[buf_idx] = t_str
+            buf_idx = buf_idx + 1
+            length = length + #t_str
+        end
     end
 
+    -- パディング処理
     local padding = 4 - (length % 4 == 0 and 4 or (length % 4))
     if padding > 0 then
-        out:write(string.rep("\xFF", padding))
+        out_buffer[buf_idx] = string.rep("\xFF", padding)
     end
+
+    -- 最後に全データを一括で書き出し
+    out:write(table.concat(out_buffer))
 end
 
 local function compress_nlz11(input, out)
