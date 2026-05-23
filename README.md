@@ -2,16 +2,21 @@
 ほぼCopilotに書かせたクソコードです。使いたい人だけ使って下さい。  
 forkしても良いですがpullリクエストはしないで下さい。自分は殆ど理解してないので。  
 
-## 使い方
-①: 3DSのSDカード内に`tja`という名前でフォルダを作り、変換したいtjaファイルの名前を`chart.tja`にして下さい。  
-②: そしたら`chart_Oni.bin`という名前でファイルを新規作成して下さい。  
-③: GodMode9でluaスクリプトを選択し、tja2fumen内のmain.luaを実行して下さい。  
+## 使い方(tja2fumen)
+①: 3DSのSDカード内に`tja`という名前でフォルダを作り、変換したいtjaファイルをそのフォルダ内に入れて下さい。  
+②: GodMode9でluaスクリプトを選択し、`tja2fumen.lua`を実行して下さい。  
 
-④: 3DSで変換後の譜面をプレイする際は、tja2fumen内のcompress.luaを実行して下さい。  
+③: ファイルを選択した後圧縮するかどうか聞かれるので3DSで変換後の譜面をプレイする際は、Aボタンを押してください。  
 > [!TIP]
 > この圧縮作業はかなりの時間を要するので充電したままにする事をおすすめします。  
 
-⑤: あとは[こちらのサイト](https://uwuu.ca/guides/3ds3mod/#section-3-song-replacement)を見ながらファイルを置き換えればプレイが出来ます。
+④: あとは[こちらのサイト](https://uwuu.ca/guides/3ds3mod/#section-3-song-replacement)を見ながらファイルを置き換えればプレイが出来ます。  
+
+## 使い方(aac2naac)
+①: 3DSのSDカード内に`tja`という名前でフォルダを作り、変換したいaacファイルをそのフォルダ内に入れて下さい。  
+②: GodMode9でluaスクリプトを選択し、`aac2naac.lua`を実行して下さい。  
+
+③: あとは[こちらのサイト](https://uwuu.ca/guides/3ds3mod/#section-3-song-replacement)を見ながらファイルを置き換えれば楽曲が変わります。  
 
 ## 直すところリスト
 - [x] 音符下の文字を自然にする
