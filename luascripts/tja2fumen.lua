@@ -1,6 +1,7 @@
 -- tja2fumen.lua
 -- chart.tja を固定で変換するバージョン
 
+local const      = require("tja2fumen.constants")
 local parsers    = require("tja2fumen.parsers")
 local converters = require("tja2fumen.converters")
 local writers    = require("tja2fumen.writers")
@@ -51,7 +52,9 @@ for course_name, course in pairs(tja.courses) do
 
     -- 出力ファイル名
     local base = target:gsub("%.tja$", "")
-    local outpath = base .. "_" .. course_name .. ".bin"
+    local cid = const.COURSE_IDS[course_name] or "m"
+
+    local outpath = base .. "_" .. cid .. ".bin"
 
     print("Writeing: " .. outpath)
     writers.write_fumen(outpath, fumen)
