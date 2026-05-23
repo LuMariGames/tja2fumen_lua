@@ -494,7 +494,7 @@ function replace_alternate_don_kas(clusters, eighth)
         end
 
         for i, note in ipairs(cluster) do
-            if all_don and (#cluster % 2 == 1) and (i % 2 == 2)
+            if all_don and (#cluster % 2 == 1) and (i % 2 == 0)
                 and not big[note.note_type]
                 and not note.manually_set
             then

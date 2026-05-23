@@ -25,7 +25,11 @@ end
 ----------------------------------------------------------------------
 
 local function write_fumen(path_out, song)
-    local file = assert(io.open(path_out, "wb"))
+    local file = io.open(path_out, "wb")
+    if not file then
+        fs.make_dummy_file(path_out, 0)
+        file = io.open(path_out, "wb")
+    end
 
     -- Write header (520 bytes)
     file:write(song.header:raw_bytes())
