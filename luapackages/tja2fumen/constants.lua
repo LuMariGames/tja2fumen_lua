@@ -119,7 +119,7 @@ M.COURSE_IDS = {
     Normal = 'n',
     Hard   = 'h',
     Oni    = 'm',
-    Ura    = 'ex',
+    Ura    = 'm',
 }
 
 M.TIMING_WINDOWS = {
