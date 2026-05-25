@@ -1,3 +1,5 @@
+-- sliding_window.lua
+
 local SlidingWindow = {}
 SlidingWindow.__index = SlidingWindow
 
@@ -10,7 +12,7 @@ SlidingWindow.match_max = nil
 function SlidingWindow:new(buf)
     local o = {
         data = buf,
-        hash = {},
+        hash = {}, -- 各キーに対して { head = 1, tail = 0, [1] = pos, [2] = pos, ... }
         full = false,
         start = 0,
         stop = 0,
@@ -21,15 +23,6 @@ function SlidingWindow:new(buf)
     return o
 end
 
-local function hash_get(tbl, key)
-    local t = tbl[key]
-    if not t then
-        t = {}
-        tbl[key] = t
-    end
-    return t
-end
-
 function SlidingWindow:next()
     if self.index < self.disp_start - 1 then
         self.index = self.index + 1
@@ -38,12 +31,21 @@ function SlidingWindow:next()
 
     if self.full then
         local olditem = self.data[self.start]
-        table.remove(self.hash[olditem], 1)
+        local list = self.hash[olditem]
+        if list then
+            list.head = list.head + 1 -- table.remove(list, 1) を O(1) に最適化
+        end
     end
 
     local item = self.data[self.stop]
-    local list = hash_get(self.hash, item)
-    list[#list + 1] = self.stop
+    local list = self.hash[item]
+    if not list then
+        list = { head = 1, tail = 0 }
+        self.hash[item] = list
+    end
+    local tail = list.tail + 1
+    list[tail] = self.stop
+    list.tail = tail
 
     self.stop = self.stop + 1
     self.index = self.index + 1
@@ -68,10 +70,13 @@ function SlidingWindow:match(start, bufstart)
     if size == 0 then return 0 end
 
     local matchlen = 0
-    local maxlen = math.min(#self.data - bufstart, self.match_max)
+    local data = self.data
+    local maxlen = #data - bufstart
+    if maxlen > self.match_max then maxlen = self.match_max end
 
+    -- ループ内のテーブルアクセスをローカル変数に固定して高速化
     for i = 0, maxlen - 1 do
-        if self.data[start + (i % size)] == self.data[bufstart + i] then
+        if data[start + (i % size)] == data[bufstart + i] then
             matchlen = matchlen + 1
         else
             break
@@ -81,28 +86,37 @@ function SlidingWindow:match(start, bufstart)
 end
 
 function SlidingWindow:search()
+    local indices = self.hash[self.data[self.index]]
+    if not indices or indices.head > indices.tail then return nil end
+
     local match_max = self.match_max
     local match_min = self.match_min
+    local disp_min = self.disp_min
+    local index = self.index
 
-    local counts = {}
-    local indices = self.hash[self.data[self.index]] or {}
+    local best_len = -1
+    local best_disp = 0
 
-    for _, i in ipairs(indices) do
-        local matchlen = self:match(i, self.index)
+    -- ソートや一時テーブルの作成をやめ、走査しながら最大値を記録する
+    for idx = indices.head, indices.tail do
+        local i = indices[idx]
+        local matchlen = self:match(i, index)
         if matchlen >= match_min then
-            local disp = self.index - i
-            if disp >= self.disp_min then
-                counts[#counts + 1] = {matchlen, -disp}
-                if matchlen >= match_max then
-                    return counts[#counts]
+            local disp = index - i
+            if disp >= disp_min then
+                if matchlen > best_len then
+                    best_len = matchlen
+                    best_disp = -disp
+                    if matchlen >= match_max then
+                        break
+                    end
                 end
             end
         end
     end
 
-    if #counts > 0 then
-        table.sort(counts, function(a, b) return a[1] > b[1] end)
-        return counts[1]
+    if best_len >= match_min then
+        return {best_len, best_disp} -- 必要な時だけテーブルを返す
     end
 
     return nil
