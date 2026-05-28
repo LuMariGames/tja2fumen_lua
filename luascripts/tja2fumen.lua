@@ -31,7 +31,7 @@ local function to_byte_array(str)
     return t
 end
 
-print("TJA2FUMEN v1.1")
+print("TJA2FUMEN v1.2")
 local target = fs.ask_select_file("Select a .tja File.\n.tjaファイルを選択して下さい。", "0:/tja/*.tja")
 
 print("TJA Loading: " .. target)
