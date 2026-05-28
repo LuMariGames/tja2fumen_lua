@@ -150,6 +150,92 @@ local function process_commands(tja_branches, bpm)
     return processed
 end
 
+
+----------------------------------------------------------------------
+-- merge_measures_if_possible (3DS 300小節制限 回避用最適化ロジック)
+----------------------------------------------------------------------
+local function merge_measures_if_possible(fumen, tja_proc)
+    local fumen_measures = fumen.measures
+    local i = 1
+
+    while i < #fumen_measures do
+        local fm1 = fumen_measures[i]
+        local fm2 = fumen_measures[i+1]
+        local can_merge = true
+
+        -- 1. 今の小節の小節線が表示(true)なら非表示にする
+        fm1.barline = false
+
+        -- 2. 基本的なギミック（BPM、ゴーゴー状態）が手前の小節と異なる場合は結合不可
+        if can_merge and (fm1.bpm ~= fm2.bpm or fm1.gogo ~= fm2.gogo) then
+            can_merge = false
+        end
+
+        -- 3. 各分岐（通常・玄人・達人）の命令に阻害要素がないかチェック
+        if can_merge then
+            for branch_name, _ in pairs(tja_proc) do
+                local mp2 = tja_proc[branch_name] and tja_proc[branch_name][i+1]
+
+                if mp2 then
+                    -- スクロールスピード（HS）が変わる場合は結合不可
+                    if fm1.branches[branch_name].speed ~= fm2.branches[branch_name].speed then
+                        can_merge = false
+                        break
+                    end
+                    -- 特殊な命令（ディレイ、分岐開始、セクション、レベルホールド等）がある場合は結合不可
+                    if (mp2.branch_type and mp2.branch_type ~= "") or
+                       (mp2.delay and mp2.delay > 0) or
+                       mp2.section or
+                       mp2.levelhold or
+                       (mp2.pos_start and mp2.pos_start > 0) then
+                        can_merge = false
+                        break
+                    end
+                end
+            end
+        end
+
+        -- すべての条件をクリアしたら結合処理を実行
+        if can_merge then
+            local offset_ms = fm1.duration -- 結合前の小節の長さ（ミリ秒）
+            fm1.duration = fm1.duration + fm2.duration -- 小節の長さを合算
+
+            for branch_name, _ in pairs(tja_proc) do
+                local b1 = fm1.branches[branch_name]
+                local b2 = fm2.branches[branch_name]
+                if b1 and b2 then
+                    -- 次の小節にあるノーツの時間を、合算した小節内の位置にオフセット調整して移動
+                    for _, note in ipairs(b2.notes) do
+                        note.pos = note.pos + offset_ms
+                        table.insert(b1.notes, note)
+                    end
+                    b1.length = b1.length + b2.length
+                end
+
+                -- 同期をとるため、内部データ(tja_proc)の次の要素を削除
+                -- 1段階目：そもそもその分岐（普通・玄人・達人）のデータが存在するかチェック
+                if tja_proc[branch_name] ~= nil then
+                    -- 2段階目：存在する場合のみ、要素数が足りているかチェック
+                    if #tja_proc[branch_name] >= i+1 then
+                        table.remove(tja_proc[branch_name], i+1)
+                    end
+                end
+            end
+
+            -- fumenオブジェクトから次の小節を削除
+            table.remove(fumen_measures, i+1)
+            -- 結合に成功した場合はインデックス「i」を進めず、
+            -- 新しく次の小節になったもの（元々のi+2番目）とさらに結合できるか次ループでチェックする
+        else
+            i = i + 1
+        end
+    end
+
+    -- 最終的な総小節数をヘッダーに再設定
+    fumen.header.b512_b515_number_of_measures = #fumen_measures
+end
+
+
 ----------------------------------------------------------------------
 -- convert_tja_to_fumen
 ----------------------------------------------------------------------
@@ -317,6 +403,13 @@ local function convert_tja_to_fumen(tja)
         end
 
         ::continue::
+    end
+
+
+    -- ★各コースのパースが完了した直後に、小節の最適化（結合処理）を実行
+    if fumen.header.b512_b515_number_of_measures > 300 then
+        local course_answer = ui.ask("The number of measures exceeds 300.\nIt might work if you combine the charts.\nDo you want to combine them?\n\n小節数が300を超えています。\n譜面を結合すれば動くかも知れません。\n結合しますか？")
+        if course_answer then merge_measures_if_possible(fumen, tja_proc) end
     end
 
     fumen.header:set_hp_bytes(total_notes.normal, tja.course, tja.level)

@@ -119,12 +119,7 @@ local function write_fumen(path_out, song)
             end
         end
     end
-
-    file:seek("set", 0)
-    for i = 1, 36 do
-        file:write("\x34\x33\xC8\x41\x67\x26\x96\x42\x22\xE2\xD8\x42")
-    end
-
+    file:close() -- リソースリーク防止のため明示的にクローズを推奨
 end
 
 ----------------------------------------------------------------------

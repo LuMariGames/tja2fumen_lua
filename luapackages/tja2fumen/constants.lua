@@ -20,7 +20,7 @@ M.TJA_NOTE_TYPES = {
     ['9'] = 'Kusudama',
     ['A'] = 'DON2',      -- hands
     ['B'] = 'KA2',       -- hands
-    ['C'] = 'Blank',     -- bombs
+    ['C'] = 'Bomb',      -- bombs
     ['D'] = 'Drumroll',  -- fuse roll
     ['E'] = 'DON2',      -- red + green single hit
     ['F'] = 'Ka',        -- ADLib (hidden note)
@@ -65,6 +65,7 @@ M.FUMEN_NOTE_TYPES = {
     [0x17] = "Unknown10",   -- ? (Present in some Wii4 songs)
     [0x18] = "Unknown11",   -- ? (Present in some PS4 songs)
     [0x19] = "Unknown12",   -- ? (Present in some PS4 songs)
+    [0x1A] = "Bomb",
     [0x22] = "Unknown13",   -- ? (Present in some Wii1 songs)
     [0x62] = "Drumroll2",   -- ?
 }

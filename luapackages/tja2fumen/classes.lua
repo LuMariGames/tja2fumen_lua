@@ -1,9 +1,11 @@
 -- classes.lua
 -- Lua 5.4 implementation of tja2fumen.classes
 
+local const   = require("tja2fumen.constants")
+
 -- 依存（Python 側の BRANCH_NAMES, TIMING_WINDOWS 相当）
 local BRANCH_NAMES = BRANCH_NAMES or { "normal", "professional", "master" }
-local TIMING_WINDOWS = TIMING_WINDOWS or {} -- 例: TIMING_WINDOWS["Oni"] = { ... }
+local TIMING_WINDOWS = TIMING_WINDOWS or const.TIMING_WINDOWS -- 例: TIMING_WINDOWS["Oni"] = { ... }
 
 local M = {}
 
