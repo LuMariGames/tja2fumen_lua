@@ -87,6 +87,7 @@ local function convert_to_naac(aac_path)
         naac_path = base .. "_3ds.naac"
     end
 
+
     local f_out = io.open(naac_path, "wb")
     if not f_out then
         fs.make_dummy_file(naac_path, 0)
@@ -148,4 +149,5 @@ end
 -- 使用例
 print("AAC2NAAC")
 local target = fs.ask_select_file("Select a .aac File.\n.aacファイルを選択して下さい。", "0:/tja/*.aac")
+if not target then return end
 convert_to_naac(target)

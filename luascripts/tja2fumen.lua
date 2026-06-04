@@ -1,5 +1,4 @@
 -- tja2fumen.lua
--- chart.tja を固定で変換するバージョン
 
 local const      = require("tja2fumen.constants")
 local parsers    = require("tja2fumen.parsers")
@@ -33,6 +32,8 @@ end
 
 print("TJA2FUMEN v1.2")
 local target = fs.ask_select_file("Select a .tja File.\n.tjaファイルを選択して下さい。", "0:/tja/*.tja")
+
+if not target then return end
 
 print("TJA Loading: " .. target)
 
