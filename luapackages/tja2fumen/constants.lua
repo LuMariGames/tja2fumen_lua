@@ -20,13 +20,30 @@ M.TJA_NOTE_TYPES = {
     ['9'] = 'Kusudama',
     ['A'] = 'DON2',      -- hands
     ['B'] = 'KA2',       -- hands
-    ['C'] = 'Bomb',      -- bombs
+    ['C'] = 'Bomb',     -- bombs
     ['D'] = 'Drumroll',  -- fuse roll
     ['E'] = 'DON2',      -- red + green single hit
     ['F'] = 'Ka',        -- ADLib (hidden note)
     ['G'] = 'KA2',       -- red + green double hit
     ['H'] = 'DRUMROLL',  -- double roll
     ['I'] = 'Drumroll',  -- green roll
+}
+
+M.NOTE_TYPE_TO_TJA = {
+    [0x01] = "1",
+    [0x02] = "1",
+    [0x03] = "1",
+    [0x04] = "2",
+    [0x05] = "2",
+    [0x06] = "5",
+    [0x07] = "3",
+    [0x08] = "4",
+    [0x09] = "6",
+    [0x0A] = "7",
+    [0x0C] = "9",
+    [0x1A] = "C",
+    [0x1B] = "C",
+    [0x1C] = "C",
 }
 
 -- Conversion for TJAPlayer3's #SENOTECHANGE command
@@ -68,6 +85,7 @@ M.FUMEN_NOTE_TYPES = {
     [0x1A] = "Bomb",
     [0x22] = "Unknown13",   -- ? (Present in some Wii1 songs)
     [0x62] = "Drumroll2",   -- ?
+    [0xFF] = "EndDRB",   -- ?
 }
 
 -- Invert the dict to go from note type to fumen byte values

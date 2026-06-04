@@ -405,10 +405,9 @@ local function convert_tja_to_fumen(tja)
         ::continue::
     end
 
-
     -- ★各コースのパースが完了した直後に、小節の最適化（結合処理）を実行
     if fumen.header.b512_b515_number_of_measures > 300 then
-        local course_answer = ui.ask("The number of measures exceeds 300.\nIt might work if you combine the charts.\nDo you want to combine them?\n\n小節数が300を超えています。\n譜面を結合すれば動くかも知れません。\n結合しますか？")
+        local course_answer = ui.ask("The number of measures exceeds 300.\nIt might work if you combine the charts.\nDo you want to combine them?\n\n小節数が300を超えています。譜面を結合すれば動くかも知れません。\n結合しますか？")
         if course_answer then merge_measures_if_possible(fumen, tja_proc) end
     end
 
@@ -518,7 +517,7 @@ function fix_dk_note_types(dk_notes, song_bpm)
         end
     end
 
-    replace_alternate_don_kas(final, eighth)
+    replace_alternate_don_kas(final, math.floor(measure_dur / 8))
 end
 
 ----------------------------------------------------------------------

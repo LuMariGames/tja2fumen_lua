@@ -435,69 +435,48 @@ function FumenHeader:set_timing_windows(difficulty)
     self.b000_b431_timing_windows = t
 end
 
-function FumenHeader:_get_hp_from_lookup_tables(n_notes, difficulty, stars)
-    if not (n_notes > 0 and n_notes <= 2500) then
-        return
-    end
-    local star_to_key = {
-        Oni =   { [1]='17',[2]='17',[3]='17',[4]='17',[5]='17',
-                  [6]='17',[7]='17',[8]='8',[9]='910',[10]='910' },
-        Hard =  { [1]='12',[2]='12',[3]='3',[4]='4',[5]='58',
-                  [6]='58',[7]='58',[8]='58',[9]='58',[10]='58' },
-        Normal={ [1]='12',[2]='12',[3]='3',[4]='4',[5]='57',
-                  [6]='57',[7]='57',[8]='57',[9]='57',[10]='57' },
-        Easy = { [1]='1',[2]='23',[3]='23',[4]='45',[5]='45',
-                 [6]='45',[7]='45',[8]='45',[9]='45',[10]='45' },
-    }
-    local key = difficulty .. "-" .. star_to_key[difficulty][stars]
-    local f = io.open("0:/gm9/luapackages/tja2fumen/hp_values.csv", "r")
-    if not f then return end
-    local header_line = f:read("l")
-    if not header_line then f:close(); return end
-    local headers = split(header_line, ",")
-    local good_key = "good_" .. key
-    local ok_key   = "ok_" .. key
-    local bad_key  = "bad_" .. key
-
-    local idx_good, idx_ok, idx_bad
-    for i, h in ipairs(headers) do
-        if h == good_key then idx_good = i end
-        if h == ok_key   then idx_ok   = i end
-        if h == bad_key  then idx_bad  = i end
-    end
-
-    local num = 0
-    for line in f:lines() do
-        num = num + 1
-        if num == n_notes then
-            local cols = split(line, ",")
-            if idx_good then
-                self.b444_b447_hp_gain_good = tonumber(cols[idx_good]) or self.b444_b447_hp_gain_good
-            end
-            if idx_ok then
-                self.b448_b451_hp_gain_ok = tonumber(cols[idx_ok]) or self.b448_b451_hp_gain_ok
-            end
-            if idx_bad then
-                self.b452_b455_hp_loss_bad = tonumber(cols[idx_bad]) or self.b452_b455_hp_loss_bad
-            end
-            break
-        end
-    end
-    f:close()
-end
-
 function FumenHeader:set_hp_bytes(n_notes, difficulty, stars)
     if difficulty == "Ura" or difficulty == "Edit" then
         difficulty = "Oni"
     end
-    self:_get_hp_from_lookup_tables(n_notes, difficulty, stars)
-    local clear_map = {
-        Easy   = 6000,
-        Normal = 7000,
-        Hard   = 7000,
-        Oni    = 8000,
+
+    -- csvでの魂ゲージ調整は何かと不便なので新しく書き直した
+    self.b444_b447_hp_gain_good = (10000 // n_notes) + 1
+    if course == 'Oni' then
+        self.b448_b451_hp_gain_ok = self.b444_b447_hp_gain_good * 0.5
+        if stars <= 7 and stars ~= 0 then self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -1.6
+        else self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -2 end
+    elseif course == 'Hard' then
+        self.b448_b451_hp_gain_ok = self.b444_b447_hp_gain_good * 0.75
+        if stars <= 2 and stars ~= 0 then self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -0.5
+        elseif stars == 3 then self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -1
+        elseif stars == 4 then self.b452_b455_hp_loss_bad = (self.b444_b447_hp_gain_good * (7000 // 6)) * -0.001
+        else self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -1.2 end
+    elseif course == 'Normal' then
+        self.b448_b451_hp_gain_ok = self.b444_b447_hp_gain_good * 0.75
+        if stars <= 3 and stars ~= 0 then self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -0.5
+        elseif stars == 4 then self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -0.75
+        else self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -1 end
+    elseif course == 'Easy' then
+        self.b448_b451_hp_gain_ok = self.b444_b447_hp_gain_good * 0.75
+        self.b452_b455_hp_loss_bad = self.b444_b447_hp_gain_good * -0.5
+    end
+
+    -- 二次元配列を使って管理。多分if文でも出来るけどね。
+    local soul_map = {
+        Oni  = { [1]=7075,[2]=7075,[3]=7075,[4]=7075,[5]=7075,[6]=7075,[7]=7075,[8]=7000,[9]=7500,[10]=7500 },
+        Hard = { [1]=7750,[2]=7750,[3]=7250,[4]=6910,[5]=6750,[6]=6875,[7]=6875,[8]=6875,[9]=6875,[10]=6875 },
+        Normal={ [1]=6560,[2]=6560,[3]=6955,[4]=7035,[5]=7500,[6]=7500,[7]=7500,[8]=7500,[9]=7500,[10]=7500 },
+        Easy = { [1]=6000,[2]=6333,[3]=6333,[4]=7333,[5]=7333,[6]=7333,[7]=7333,[8]=7333,[9]=7333,[10]=7333 },
     }
-    self.b440_b443_hp_clear = clear_map[difficulty] or self.b440_b443_hp_clear
+    self.b436_b439_hp_max = soul_map[difficulty][stars] or self.b436_b439_hp_max
+    local clear_map = {
+        Oni  = { [1]=5660,[2]=5660,[3]=5660,[4]=5660,[5]=5660,[6]=5660,[7]=5660,[8]=5600,[9]=6000,[10]=6000 },
+        Hard = { [1]=5450,[2]=5450,[3]=5080,[4]=4840,[5]=4724,[6]=4812,[7]=4812,[8]=4812,[9]=4812,[10]=4812 },
+        Normal={ [1]=4595,[2]=4595,[3]=4868,[4]=4925,[5]=5250,[6]=5250,[7]=5250,[8]=5250,[9]=5250,[10]=5250 },
+        Easy = { [1]=3600,[2]=3800,[3]=3800,[4]=4400,[5]=4400,[6]=4400,[7]=4400,[8]=4400,[9]=4400,[10]=4400 },
+    }
+    self.b440_b443_hp_clear = clear_map[difficulty][stars] or self.b440_b443_hp_clear
 end
 
 function FumenHeader:raw_bytes()
