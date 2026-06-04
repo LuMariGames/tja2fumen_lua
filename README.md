@@ -19,8 +19,11 @@ forkしても良いですがpullリクエストはしないで下さい。自分
 ## 使い方(aac2naac)
 ①: 3DSのSDカード内に`tja`という名前でフォルダを作り、変換したいaacファイルをそのフォルダ内に入れて下さい。  
 ②: GodMode9でluaスクリプトを選択し、`aac2naac.lua`を実行して下さい。  
+③: aacファイルを選択したら後は自動でnaac用のヘッダーを付け加えてくれます。  
+> [!TIP]
+> サンプリングレート32000Hz、2チャンネルのaacファイルが必須です。  
 
-③: あとは[こちらのサイト](https://uwuu.ca/guides/3ds3mod/#section-3-song-replacement)を見ながらファイルを置き換えれば楽曲が変わります。  
+④: あとは[こちらのサイト](https://uwuu.ca/guides/3ds3mod/#section-3-song-replacement)を見ながらファイルを置き換えれば楽曲が変わります。  
 
 ## Q&A
 - Q1. 300小節超えた譜面は変換出来ますか？  
